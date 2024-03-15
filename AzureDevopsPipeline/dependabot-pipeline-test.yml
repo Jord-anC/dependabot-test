@@ -1,0 +1,67 @@
+# schedules:
+#   - cron: 0 7 * * Mon,Tue,Wed,Thu,Fri
+#     displayName: Dependabot daily check for vulnerabilities
+#     always: true
+#     branches:
+#       include:
+#       - main
+
+trigger: none
+
+variables:
+  - name: imageToCache
+    value: tingle/dependabot-azure-devops:0.4
+
+stages:
+  - stage: CheckDependencies
+    displayName: 'Check Dependencies'
+    jobs:
+      - job: Dependabot
+        displayName: 'Run Dependabot'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          # - task: CreateWorkItem@1
+          #   displayName: 'Create User Story for Dependabot'
+          #   inputs:
+          #     workItemType: 'User Story'
+          #     title: 'Update Dependencies'
+          #     fieldMappings: |
+          #       Tags=dependabot; dependencies
+          #     areaPath: 'your\area'
+          #     iterationPath: 'your\iteration'
+          #     preventDuplicates: true
+          #     keyFields: |
+          #       System.AreaPath
+          #       System.IterationPath
+          #       System.Title
+          #     createOutputs: true
+          #     outputVariables: |
+          #       workItemId=ID
+
+          # - task: Cache@2
+          #   inputs:
+          #     key: docker | "${{ variables.imageToCache }}"
+          #     path: $(Pipeline.Workspace)/docker
+          #     cacheHitVar: DOCKER_CACHE_HIT
+          #   displayName: Cache Docker 
+            
+          # - script: |
+          #     docker load -i $(Pipeline.Workspace)/docker/cache.tar
+          #   displayName: Restore Docker image
+          #   condition: and(not(canceled()), eq(variables.DOCKER_CACHE_HIT, 'true'))
+
+          # - script: |
+          #     mkdir -p $(Pipeline.Workspace)/docker
+          #     docker pull -q ${{ variables.imageToCache }}
+          #     docker save -o $(Pipeline.Workspace)/docker/cache.tar ${{ variables.imageToCache }}
+          #   displayName: Save Docker image
+          #   condition: and(not(canceled()), or(failed(), ne(variables.DOCKER_CACHE_HIT, 'true')))
+            
+          - task: dependabot@1
+            displayName: 'Run Dependabot'
+            inputs:
+              gitHubConnection: GitHubPublicRepoAccess
+              packageManager: 'nuget'
+              targetBranch: 'main'
+              autoApprove: false
